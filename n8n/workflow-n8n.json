@@ -1,0 +1,560 @@
+{
+    "name": "Perplexity-Like App - n8n workflow",
+    "nodes": [
+      {
+        "parameters": {
+          "fieldToSplitOut": "organic_results",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          360,
+          -140
+        ],
+        "id": "",
+        "name": "Split Out"
+      },
+      {
+        "parameters": {
+          "modelId": {
+            "__rl": true,
+            "value": "={{ $json.model }}",
+            "mode": "id"
+          },
+          "messages": {
+            "values": [
+              {
+                "content": "={{ $json.prompt }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.openAi",
+        "typeVersion": 1.8,
+        "position": [
+          2440,
+          -140
+        ],
+        "id": "",
+        "name": "OpenAI",
+        "credentials": {
+          "openAiApi": {
+            "id": "",
+            "name": "OpenAi"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "fieldsToSummarize": {
+            "values": [
+              {
+                "aggregation": "append",
+                "field": "output"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.summarize",
+        "typeVersion": 1,
+        "position": [
+          1340,
+          -140
+        ],
+        "id": "",
+        "name": "Summarize"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "",
+          "authentication": "headerAuth",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          -260,
+          -140
+        ],
+        "id": "",
+        "name": "Webhook",
+        "webhookId": "",
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "",
+            "name": ""
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "https://serpapi.com/search",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "api_key",
+                "value": "<your_SerpApi_api_key"
+              },
+              {
+                "name": "engine",
+                "value": "google"
+              },
+              {
+                "name": "q",
+                "value": "={{ $('Webhook').item.json.body.query }}"
+              },
+              {
+                "name": "google_domain",
+                "value": "={{ $json.body.domain }}"
+              },
+              {
+                "name": "gl",
+                "value": "={{ $json.body.country }}"
+              },
+              {
+                "name": "hl",
+                "value": "={{ $json.body.language }}"
+              },
+              {
+                "name": "device",
+                "value": "={{ $json.body.device }}"
+              },
+              {
+                "name": "num",
+                "value": "={{ $json.body.num }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          40,
+          -140
+        ],
+        "id": "",
+        "name": "SerpApi - Get SERP"
+      },
+      {
+        "parameters": {
+          "text": "={{ $json.data }}",
+          "schemaType": "manual",
+          "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"title\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"The title of the page\"\n\t\t},\n\t\t\"link\": {\n\t\t\t\"type\": \"string\",\n\t\t\t\"description\": \"The link to the page\"\n\t\t},\n\t\t\"key_insights\": {\n\t\t\t\"type\": \"array\",\n\t\t\t\"items\": {\n\t\t\t\t\"type\": \"string\",\n\t\t\t\t\"description\": \"A list of key points summarizing the useful content\"\n\t\t\t}\n\t\t},\n\t\t\"formulas\": {\n\t\t\t\"type\": \"array\",\n\t\t\t\"items\": {\n\t\t\t\t\"type\": \"string\",\n\t\t\t\t\"description\": \"A list of mathematical or scientific formulas (LaTeX format)\"\n\t\t\t},\n\t\t\t\"optional\": true\n\t\t},\n\t\t\"tables\": {\n\t\t\t\"type\": \"array\",\n\t\t\t\"items\": {\n\t\t\t\t\"type\": \"string\",\n\t\t\t\t\"description\": \"A list of structured data tables in Markdown format\"\n\t\t\t},\n\t\t\t\"optional\": true\n\t\t},\n\t\t\"code_snippets\": {\n\t\t\t\"type\": \"array\",\n\t\t\t\"items\": {\n\t\t\t\t\"type\": \"string\",\n\t\t\t\t\"description\": \"A list of relevant code snippets extracted from the page (only if necessary)\"\n\t\t\t},\n\t\t\t\"optional\": true\n\t\t}\n\t}\n}",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+        "typeVersion": 1,
+        "position": [
+          960,
+          -140
+        ],
+        "id": "",
+        "name": "Information Extractor1",
+        "retryOnFail": true,
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "url": "=https://r.jina.ai/{{ $json.link }}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {}
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          660,
+          -140
+        ],
+        "id": "",
+        "name": "Jina AI - Reader",
+        "retryOnFail": false,
+        "alwaysOutputData": true
+      },
+      {
+        "parameters": {
+          "respondWith": "allIncomingItems",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          3000,
+          -140
+        ],
+        "id": "",
+        "name": "Respond to Webhook"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('Webhook').item.json.body.query }}",
+          "hasOutputParser": true,
+          "messages": {
+            "messageValues": [
+              {
+                "message": "Classify the following user query as related to STEM (Science, Technology, Engineering, or Mathematics) or not.  If the query is related to STEM, set \"STEM\": true. Otherwise, set \"STEM\": false."
+              }
+            ]
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.chainLlm",
+        "typeVersion": 1.5,
+        "position": [
+          1580,
+          -140
+        ],
+        "id": "",
+        "name": "Basic LLM Chain",
+        "executeOnce": true
+      },
+      {
+        "parameters": {
+          "schemaType": "manual",
+          "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"STEM\": {\n\t\t\t\"type\": \"boolean\"\n\t\t}\n\t}\n}\n"
+        },
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.2,
+        "position": [
+          1760,
+          60
+        ],
+        "id": "",
+        "name": "Structured Output Parser"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4o-mini",
+            "mode": "list",
+            "cachedResultName": "gpt-4o-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          1580,
+          60
+        ],
+        "id": "",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "Y",
+            "name": "OpenAi"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "",
+                "name": "STEM",
+                "value": "={{ $json.output.STEM }}",
+                "type": "boolean"
+              },
+              {
+                "id": "",
+                "name": "model",
+                "value": "={{ $('Webhook').item.json.body.model }}",
+                "type": "string"
+              },
+              {
+                "id": "",
+                "name": "model_selection_type",
+                "value": "={{ $('Webhook').item.json.body.model_selection_type }}",
+                "type": "string"
+              },
+              {
+                "id": "",
+                "name": "stem_response_prompt",
+                "value": "=Answer the user's question using the provided documents as the primary source of information.\nFor each argument or piece of key information included in your summary, cite the specific source as a clickable Markdown link in the format: [Document Title](Document URL).\nIf key details are missing or incomplete, you may rely on your own knowledge to supplement the response.\n\n## Strict Markdown Formatting Guidelines:\n- Use headings (#, ##, ###) to structure the response logically.\n- Use code blocks (```) for any code snippets or formulas.\n- Use tables for structured data representation.\n- Format mathematical expressions using LaTeX syntax within Markdown:\n- Inline formulas: $...$\n- Block formulas: $$...$$\n- Do not use <br> tags—use newline characters instead.\n\nEnsure the response is structured, technically accurate, and clearly explained. If additional knowledge is used, clearly indicate how it complements the provided documents, while still citing any relevant external sources (if applicable) in a similar clickable link format.\n\n## User query:\n\n{{ $('Webhook').item.json.body.query }}\n\n## Documents\n\n{{ $('Summarize').item.json.appended_output.toJsonString() }}",
+                "type": "string"
+              },
+              {
+                "id": "",
+                "name": "general_response_prompt",
+                "value": "=Answer the user's question using the provided documents as the primary source of information.\nFor each argument or piece of information drawn from the documents, include a source citation with a clickable Markdown link in the format: [Document Title](Document URL).\nIf the documents are incomplete or lack critical details, you may supplement your response with your own knowledge.\n\n## Strict Markdown Formatting Guidelines:\n- Use headings (#, ##, ###) to structure the response logically.\n- Use bold text (**bold**) for emphasis.\n- Use bullet points (-) and numbered lists (1.) for clarity and organization.\n- Use tables for structured data where appropriate.\n- Do not use <br> tags—use newline characters instead.\n\nEnsure the response is clear, well-structured, and easy to understand, while maintaining a comprehensive and accurate approach. If additional knowledge is used, clearly indicate how it complements the provided documents, and cite external sources in a similar clickable link format if needed.\n\n## User query:\n\n{{ $('Webhook').item.json.body.query }}\n\n## Documents\n\n{{ $('Summarize').item.json.appended_output.toJsonString() }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1960,
+          -140
+        ],
+        "id": "",
+        "name": "Set fields - Prompts, STEM, model selection"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4o-mini",
+            "mode": "list",
+            "cachedResultName": "gpt-4o-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          960,
+          60
+        ],
+        "id": "",
+        "name": "OpenAI Chat Model1",
+        "credentials": {
+          "openAiApi": {
+            "id": "",
+            "name": "OpenAi"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "",
+                "name": "sources",
+                "value": "={{ $('Summarize').item.json.appended_output.map(item => ({ title: item.title, link: item.link }))\n }}",
+                "type": "array"
+              },
+              {
+                "id": "",
+                "name": "response",
+                "value": "={{ $json.message.content.replace(/<br\\s*\\/?>/g, \"\\n\") }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2680,
+          -140
+        ],
+        "id": "",
+        "name": "Set fields - Sources & response"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "",
+                "name": "model",
+                "value": "={{ \n  $json.model_selection_type === 'manual'\n    ? $json.model \n    : ($json.STEM ? 'o1-mini' : 'gpt-4o-mini')\n}}",
+                "type": "string"
+              },
+              {
+                "id": "",
+                "name": "prompt",
+                "value": "={{ \n  $json.STEM === true \n    ? $json.stem_response_prompt\n    : $json.general_response_prompt\n}}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          2220,
+          -140
+        ],
+        "id": "",
+        "name": "Set fields - Prepare for LLM call"
+      }
+    ],
+    "pinData": {},
+    "connections": {
+      "Split Out": {
+        "main": [
+          [
+            {
+              "node": "Jina AI - Reader",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Summarize": {
+        "main": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "SerpApi - Get SERP",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI": {
+        "main": [
+          [
+            {
+              "node": "Set fields - Sources & response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SerpApi - Get SERP": {
+        "main": [
+          [
+            {
+              "node": "Split Out",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Information Extractor1": {
+        "main": [
+          [
+            {
+              "node": "Summarize",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Jina AI - Reader": {
+        "main": [
+          [
+            {
+              "node": "Information Extractor1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Structured Output Parser": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Basic LLM Chain",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Basic LLM Chain": {
+        "main": [
+          [
+            {
+              "node": "Set fields - Prompts, STEM, model selection",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set fields - Prompts, STEM, model selection": {
+        "main": [
+          [
+            {
+              "node": "Set fields - Prepare for LLM call",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model1": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Information Extractor1",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set fields - Sources & response": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set fields - Prepare for LLM call": {
+        "main": [
+          [
+            {
+              "node": "OpenAI",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "versionId": "",
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": ""
+    },
+    "id": "",
+    "tags": []
+  }
